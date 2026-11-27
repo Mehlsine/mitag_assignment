@@ -55,16 +55,16 @@ if (detailed):
 
     # Сохраняем итог в csv
     result.to_csv('daily_by_sku.csv', index=False)
+else:
+    df = df.fillna(0)
+    df = df.drop_duplicates()
+    df['status'] = df['status'].astype(str).str.strip().str.lower().replace({'canceled': 'cancelled'})
+    is_delivered = df['status'] == 'delivered'
+    df['revenue'] = (df['quantity'] * df['price']).where(is_delivered, 0)
+    result = (df.groupby(['sku', 'order_date'], as_index=False)
+                .agg(
+                    orders=('order_id', 'count'),
+                    revenue=('revenue', 'sum'),
+                ))
 
-df = df.fillna(0)
-df = df.drop_duplicates()
-df['status'] = df['status'].astype(str).str.strip().str.lower().replace({'canceled': 'cancelled'})
-is_delivered = df['status'] == 'delivered'
-df['revenue'] = (df['quantity'] * df['price']).where(is_delivered, 0)
-result = (df.groupby(['sku', 'order_date'], as_index=False)
-            .agg(
-                orders=('order_id', 'count'),
-                revenue=('revenue', 'sum'),
-            ))
-
-result.to_csv('daily_by_sku.csv', index=False)
+    result.to_csv('daily_by_sku.csv', index=False)
