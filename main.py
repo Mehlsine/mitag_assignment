@@ -34,3 +34,19 @@ df['status'] = df['status'].astype(str).str.strip().str.lower().replace({'cancel
 
 # Проверяем статусы повторно
 print(df['status'].unique())
+
+# Теперь займемся непосредственно расчетами. Для подсчета выручки найдем строки со статусом 'delivered'
+is_delivered = df['status'] == 'delivered'
+
+# Используем is_delivered, чтобы посчитать quantity и price только для строк со статусом delivered, для cancelled ставим в revenue цифру 0
+df['revenue'] = (df['quantity'] * df['price']).where(is_delivered, 0)
+
+# Собираем итоговый датафрейм с группировкой по артикулу и дате заказа
+result = (df.groupby(['sku', 'order_date'], as_index=False)
+          .agg(
+              orders=('order_id', 'count'),
+              revenue=('revenue', 'sum'),
+          ))
+
+# Сохраняем итог в csv
+result.to_csv('daily_by_sku.csv', index=False)
